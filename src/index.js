@@ -17,6 +17,7 @@ const Socket=net.Socket;
 
 const nullString=String.fromCharCode(0);
 
+
 class MikroNode {
 
     /** Host to connect */
@@ -50,6 +51,10 @@ class MikroNode {
 
     @Private
     socketProto='tcp4';
+
+    /** Version of routeros */
+    @Private
+    version = 645;
 /**
  * Creates a MikroNode API object.
  * @exports mikronode
@@ -160,21 +165,38 @@ class MikroNode {
 
         const login=(user,password,cb)=>{
             this.debug>=DEBUG.DEBUG&&console.log('Logging in');
-            stream.write('/login');
             const {promise,resolve,reject}=getUnwrappedPromise();
-            // Create a connection handler
-            this.connection=new Connection(
-                {...stream,close},
-                challenge=>{
-                    const md5=crypto.createHash('md5');
-                    md5.update(Buffer.concat([Buffer.from(nullString+password),Buffer.from(challenge)]));
-                    stream.write([
-                        "/login",
-                        "=name="+user,
-                        "=response=00"+md5.digest("hex")
-                    ]);
-                },{resolve,reject}
-            );
+
+            if (this.version < 643){
+                stream.write('/login');
+                // Create a connection handler
+                this.connection=new Connection(
+                  {...stream,close},
+                  challenge=>{
+
+                      const md5=crypto.createHash('md5');
+                      md5.update(Buffer.concat([Buffer.from(nullString+password),Buffer.from(challenge)]));
+                      stream.write([
+                          "/login",
+                          "=name="+user,
+                          "=response=00"+md5.digest("hex")
+                      ]);
+                  },{resolve,reject}
+                );
+            }else{
+                stream.write([
+                    "/login",
+                    "=name="+user,
+                    "=password="+password,
+                ]);
+                this.connection=new Connection(
+                  {...stream,close},
+                  challenge=>{
+
+                     debugger
+                  },{resolve,reject}
+                );
+            }
             this.connection.setDebug(this.debug);
             promise.then(()=>{
                 if (cb) cb(null,this.connection);
