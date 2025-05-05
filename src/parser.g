@@ -31,8 +31,10 @@ end
   / "!done" s tag:tag                            {return {type: "done_ret", tag:tag}}
   / "!done"                                      {return {type: "done" }}
   / tag:tag                                      {return {type: "tag", tag:tag }}
+  / "!empty"                                     {return {type: "done" }}
 
-tag 
+
+tag
   = ".tag=" id:[a-zA-Z_\-0-9]+ colon subid:[0-9]+ s {return id.join('')+":"+subid.join('')}
   / ".tag=" id:[a-zA-Z_\-0-9]+ s {return id.join('')}
 
